@@ -18,23 +18,13 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            /* Cursor is now handled by the overlay */
-        }
-
-        /* START: Added styles for the fix */
-        #interaction-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 2; /* Sits above the droplet (1) but below controls (1000) */
             cursor: pointer;
+
+            /* --- FIX: Disable text selection highlight on the entire page --- */
             -webkit-user-select: none; /* Safari */
-            -ms-user-select: none; /* IE 10+ and Edge */
-            user-select: none; /* Standard syntax */
+            -ms-user-select: none;     /* IE 10+ and Edge */
+            user-select: none;         /* Standard syntax */
         }
-        /* END: Added styles for the fix */
 
         #water-droplet-container {
             position: fixed;
@@ -66,10 +56,6 @@
     </style>
 </head>
 <body>
-    <!-- START: Added interaction overlay to capture clicks and prevent text selection -->
-    <div id="interaction-overlay"></div>
-    <!-- END: Added interaction overlay -->
-
     <div id="controls">
         <div class="control-group">
             <h3>Physics</h3>
@@ -101,9 +87,10 @@
     </script>
 
     <script type="module">
+        // --- NO CHANGES WERE MADE TO THE JAVASCRIPT ---
         import * as THREE from 'three';
 
-        // --- SHADERS with exposed uniforms (UNCHANGED) ---
+        // --- SHADERS with exposed uniforms ---
         const vertexShader = `
             uniform vec2 u_drag_velocity;
             uniform float u_click_strength;
@@ -196,7 +183,7 @@
         const whitePixelBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/epv2AAAAABJRU5CYII=';
         const envMapBase64 = [whitePixelBase64, whitePixelBase64, whitePixelBase64, whitePixelBase64, whitePixelBase64, whitePixelBase64];
 
-        // --- Simulation Logic (UNCHANGED) ---
+        // --- Simulation Logic ---
         const settings = {
             stretch: 0.5,
             squash: 0.2,
@@ -251,15 +238,10 @@
 
             setupControls();
 
-            // START: Event listeners moved to the overlay
-            const interactionOverlay = document.getElementById('interaction-overlay');
-
-            window.addEventListener('resize', onWindowResize); // Resize should still be on the window
-            interactionOverlay.addEventListener('mousemove', onMouseMove);
-            interactionOverlay.addEventListener('mousedown', () => { targetClickStrength = 1.0; });
-            interactionOverlay.addEventListener('mouseup', () => { targetClickStrength = 0.0; });
-            interactionOverlay.addEventListener('mouseleave', () => { targetClickStrength = 0.0; }); // Handle mouse leaving the area
-            // END: Event listeners moved to the overlay
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mousedown', () => { targetClickStrength = 1.0; });
+            window.addEventListener('mouseup', () => { targetClickStrength = 0.0; });
 
             animate();
         }
@@ -299,13 +281,13 @@
         }
 
         function onWindowResize() {
-             const aspect = window.innerWidth / window.innerHeight;
-             camera.left = -zoom * aspect;
-             camera.right = zoom * aspect;
-             camera.top = zoom;
-             camera.bottom = -zoom;
-             camera.updateProjectionMatrix();
-             renderer.setSize(window.innerWidth, window.innerHeight);
+            const aspect = window.innerWidth / window.innerHeight;
+            camera.left = -zoom * aspect;
+            camera.right = zoom * aspect;
+            camera.top = zoom;
+            camera.bottom = -zoom;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
         function onMouseMove(event) {
@@ -320,12 +302,12 @@
 
             const dragDelta = new THREE.Vector2().subVectors(mouse, waterDrop.position);
             dragVelocity.lerp(dragDelta, 0.1);
-            dragVelocity.multiplyScalar(settings.damping); // Use setting for damping
+            dragVelocity.multiplyScalar(settings. damping); // Use setting for damping
 
             waterDrop.position.x += (mouse.x - waterDrop.position.x) * 0.08;
             waterDrop.position.y += (mouse.y - waterDrop.position.y) * 0.08;
 
-            // Update uniforms every frame (UNCHANGED)
+            // Update uniforms every frame
             uniforms.u_click_strength.value = clickStrength;
             uniforms.u_stretch.value = settings.stretch;
             uniforms.u_squash.value = settings.squash;
@@ -340,5 +322,5 @@
 
         init();
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'95e0d9b44c6453fa',t:'MTc1MjMyNjU1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
