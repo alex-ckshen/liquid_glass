@@ -9,7 +9,7 @@
         body {
             font-family: Arial, sans-serif;
             background: #ffffff; /* White background */
-            background-image: 
+            background-image:
                 linear-gradient(#cccccc 1px, transparent 1px),
                 linear-gradient(90deg, #cccccc 1px, transparent 1px);
             background-size: 20px 20px; /* Grid size */
@@ -18,8 +18,23 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            cursor: pointer;
+            /* Cursor is now handled by the overlay */
         }
+
+        /* START: Added styles for the fix */
+        #interaction-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2; /* Sits above the droplet (1) but below controls (1000) */
+            cursor: pointer;
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ and Edge */
+            user-select: none; /* Standard syntax */
+        }
+        /* END: Added styles for the fix */
 
         #water-droplet-container {
             position: fixed;
@@ -51,6 +66,10 @@
     </style>
 </head>
 <body>
+    <!-- START: Added interaction overlay to capture clicks and prevent text selection -->
+    <div id="interaction-overlay"></div>
+    <!-- END: Added interaction overlay -->
+
     <div id="controls">
         <div class="control-group">
             <h3>Physics</h3>
@@ -76,7 +95,7 @@
         </div>
     </div>
     <div id="water-droplet-container"></div>
-    
+
     <script type="importmap">
         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
     </script>
@@ -84,7 +103,7 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // --- SHADERS with exposed uniforms ---
+        // --- SHADERS with exposed uniforms (UNCHANGED) ---
         const vertexShader = `
             uniform vec2 u_drag_velocity;
             uniform float u_click_strength;
@@ -131,7 +150,7 @@
             uniform float u_rim_start;
             uniform float u_rim_strength;
             uniform float u_contact_shadow;
-            
+
             varying vec3 v_world_position;
             varying vec3 v_normal;
             varying vec4 v_screen_pos;
@@ -151,7 +170,7 @@
                 vec2 refr_uv = screen_uv + R_refr.xy * u_refraction;
                 refr_uv = refr_uv * 0.5 + 0.5;
                 vec4 refracted_color = texture2D(u_background_tex, refr_uv);
-                
+
                 refracted_color.rgb *= 1.1;
 
                 float fresnel = 1.0 - dot(V, N);
@@ -177,7 +196,7 @@
         const whitePixelBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/epv2AAAAABJRU5CYII=';
         const envMapBase64 = [whitePixelBase64, whitePixelBase64, whitePixelBase64, whitePixelBase64, whitePixelBase64, whitePixelBase64];
 
-        // --- Simulation Logic ---
+        // --- Simulation Logic (UNCHANGED) ---
         const settings = {
             stretch: 0.5,
             squash: 0.2,
@@ -186,7 +205,7 @@
             fresnel: 10,
             rimStart: 0.15,
             rimStrength: 0.15,
-            contactShadow: 0.5 
+            contactShadow: 0.5
         };
 
         let scene, camera, renderer, uniforms;
@@ -209,7 +228,7 @@
             scene = new THREE.Scene();
             camera = new THREE.OrthographicCamera(-zoom * aspect, zoom * aspect, zoom, -zoom, 1, 1000);
             camera.position.z = 10;
-            
+
             const envMap = new THREE.CubeTextureLoader().load(envMapBase64);
 
             uniforms = {
@@ -231,11 +250,16 @@
             scene.add(waterDrop);
 
             setupControls();
-            
-            window.addEventListener('resize', onWindowResize);
-            window.addEventListener('mousemove', onMouseMove);
-            window.addEventListener('mousedown', () => { targetClickStrength = 1.0; });
-            window.addEventListener('mouseup', () => { targetClickStrength = 0.0; });
+
+            // START: Event listeners moved to the overlay
+            const interactionOverlay = document.getElementById('interaction-overlay');
+
+            window.addEventListener('resize', onWindowResize); // Resize should still be on the window
+            interactionOverlay.addEventListener('mousemove', onMouseMove);
+            interactionOverlay.addEventListener('mousedown', () => { targetClickStrength = 1.0; });
+            interactionOverlay.addEventListener('mouseup', () => { targetClickStrength = 0.0; });
+            interactionOverlay.addEventListener('mouseleave', () => { targetClickStrength = 0.0; }); // Handle mouse leaving the area
+            // END: Event listeners moved to the overlay
 
             animate();
         }
@@ -273,8 +297,17 @@
                 });
             }
         }
-        
-        function onWindowResize() { /* ... */ }
+
+        function onWindowResize() {
+             const aspect = window.innerWidth / window.innerHeight;
+             camera.left = -zoom * aspect;
+             camera.right = zoom * aspect;
+             camera.top = zoom;
+             camera.bottom = -zoom;
+             camera.updateProjectionMatrix();
+             renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
         function onMouseMove(event) {
             const aspect = window.innerWidth / window.innerHeight;
             mouse.x = ((event.clientX / window.innerWidth) * 2 - 1) * zoom * aspect;
@@ -291,8 +324,8 @@
 
             waterDrop.position.x += (mouse.x - waterDrop.position.x) * 0.08;
             waterDrop.position.y += (mouse.y - waterDrop.position.y) * 0.08;
-            
-            // Update uniforms every frame
+
+            // Update uniforms every frame (UNCHANGED)
             uniforms.u_click_strength.value = clickStrength;
             uniforms.u_stretch.value = settings.stretch;
             uniforms.u_squash.value = settings.squash;
@@ -301,11 +334,11 @@
             uniforms.u_rim_start.value = settings.rimStart;
             uniforms.u_rim_strength.value = settings.rimStrength;
             uniforms.u_contact_shadow.value = settings.contactShadow;
-            
+
             renderer.render(scene, camera);
         }
-        
+
         init();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'95e0d9b44c6453fa',t:'MTc1MjMyNjU1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
